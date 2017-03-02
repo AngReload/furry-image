@@ -1,0 +1,23 @@
+{
+  "name": "furry-image",
+  "version": "1.0.0",
+  "description": "Class Image on JavaScript",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "AngReload",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AngReload/furry-image.git"
+  },
+  "keywords": [
+    "image",
+    "resize"
+  ],
+  "bugs": {
+    "url": "https://github.com/AngReload/furry-image/issues"
+  },
+  "homepage": "https://github.com/AngReload/furry-image#readme"
+}
