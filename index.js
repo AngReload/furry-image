@@ -131,49 +131,58 @@ class FurryImage {
 		}
 	}
 
+	crop(x, y, width, height) {
+		x = x || 0;
+		y = y || 0;
+		let components = this.components.slice();
+		let image = new FurryImage(width, height, components);
+		for (let c = 0; c < components.length; c++) {
+			for (let h = 0; h < height; h++) {
+			for (let w = 0; w < width;  w++) {
+				let value = this.getValue(c, w + x, h + y);
+				image.setValue(c, w, h, value);
+			}}
+		}
+		return image;
+	}
+
 	subsampling(n, m) {
-		console.time('subsampling');
-		n = n ? n : 2; // width ratio
-		m = m ? m : n; // height ratio
+		n = n || 2;
+		m = m || n;
 		let width = Math.ceil(this.width / n);
 		let height = Math.ceil(this.height / m);
 		let components = this.components.slice();
-		let returned_image = new FurryImage(width, height, components);
+		let image = new FurryImage(width, height, components);
 		for (let c = 0; c < components.length; c++) {
-			let h, w, acc, y, x;
-			for (h = 0; h < height; h++) {
-			for (w = 0; w < width; w++) {
+			for (let h = 0; h < height; h++) {
+			for (let w = 0; w < width; w++) {
 				let value = this.getValue(c, w * n, h * m);
-				returned_image.setValue(c, w, h, value);
+				image.setValue(c, w, h, value);
 			}}
 		}
-		console.timeEnd('subsampling');
-		return returned_image;
+		return image;
 	}
 
 	averaging(n, m) {
-		console.time('averaging');
-		n = n ? n : 2; // width ratio
-		m = m ? m : n; // height ratio
+		n = n || 2;
+		m = m || n;
 		let width = Math.ceil(this.width / n);
 		let height = Math.ceil(this.height / m);
 		let components = this.components.slice();
-		let returned_image = new FurryImage(width, height, components);
-		let windowRatio = 1 / (n * m);
+		let image = new FurryImage(width, height, components);
+		let ratio = 1 / (n * m);
 		for (let c = 0; c < components.length; c++) {
-			let h, w, acc, y, x;
-			for (h = 0; h < height; h++) {
-			for (w = 0; w < width; w++) {
-				acc = 0;
-				for (y = h * m; y < h * m + m; y++) {
-				for (x = w * n; x < w * n + n; x++) {
-					acc += this.getValue(c, x, y);
+			for (let h = 0; h < height; h++) {
+			for (let w = 0; w < width; w++) {
+				let total = 0;
+				for (let y = h * m; y < h * m + m; y++) {
+				for (let x = w * n; x < w * n + n; x++) {
+					total += this.getValue(c, x, y);
 				}}
-				returned_image.setValue(c, w, h, acc * windowRatio);
+				image.setValue(c, w, h, total * ratio);
 			}}
 		}
-		console.timeEnd('averaging');
-		return returned_image;
+		return image;
 	}
 
 	bicubic() {
