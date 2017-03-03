@@ -60,7 +60,7 @@ class FurryImage {
 				dataObject = JPEG.decode(dataRaw);
 				break;
 			case '.bmp':
-				dataObject = bmp.decode(dataRaw);
+				dataObject = BMP.decode(dataRaw);
 				break;
 			default:
 				throw new Error ('Type not support');
@@ -192,7 +192,7 @@ class FurryImage {
 		function doubleWidth(image) {
 			let width = image.width * 2;
 			let height = image.height;
-			let components = this.components.slice();
+			let components = image.components.slice();
 			let returned_image = new FurryImage(width, height, components);
 			for (let c = 0; c < components.length; c++) {
 				let h, w, prev_2, prev_1, next_1, next_2;
@@ -211,7 +211,7 @@ class FurryImage {
 		function doubleHeight(image) {
 			let width = image.width;
 			let height = image.height * 2;
-			let components = this.components.slice();
+			let components = image.components.slice();
 			let returned_image = new FurryImage(width, height, components);
 			for (let c = 0; c < components.length; c++) {
 				let h, w, prev_2, prev_1, next_1, next_2;
