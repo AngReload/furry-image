@@ -98,7 +98,6 @@ class FurryImage {
 	}
 
 	write(pathString, jpegQuality) {
-		console.time('writing');
 		let dataObject = this.toDataObject(),
 			extname = path.extname(pathString).toLowerCase(),
 			dataRaw;
@@ -116,7 +115,6 @@ class FurryImage {
 				throw new Error ('Type not support');
 		}
 		fs.writeFileSync(pathString, dataRaw);
-		console.timeEnd('writing');
 		return this;
 	}
 
@@ -227,9 +225,7 @@ class FurryImage {
 			}
 			return returned_image;
 		}
-		console.time('bicubic');
 		let returned_image = doubleWidth(doubleHeight(this));
-		console.timeEnd('bicubic');
 		return returned_image;
 	}
 
@@ -819,18 +815,15 @@ class FurryImage {
 		}
 
 
-		console.time('doubling');
 		let returned_image = merge(doubleWidth(doubleHeight(this)), doubleHeight(doubleWidth(this)));
 		for (let i = 1; i <= 4; i++) {
 			let and_fix = 1;
 			returned_image = fxsr(returned_image, this, and_fix);
 		}
-		console.timeEnd('doubling');
 		return returned_image;
 	}
 
 	supersampling(width, height) {
-		console.time('supersampling');
 		var floor = Math.floor;
 		var ratio_w = width / this.width;
 		var ratio_h = height / this.height;
@@ -896,11 +889,9 @@ class FurryImage {
 				}
 			}
 		}
-		console.timeEnd('supersampling');
 		return returned_image;
 	}
 	supersamplingBlur(width, height) {
-		console.time('supersamplingBlur');
 		var floor = Math.floor;
 		var ratio_w = width / this.width;
 		var ratio_h = height / this.height;
@@ -912,7 +903,6 @@ class FurryImage {
 
 
 
-		console.timeEnd('supersamplingBlur');
 		return returned_image;
 	}
 }
