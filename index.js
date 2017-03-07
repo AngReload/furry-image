@@ -10,6 +10,8 @@ var fs   = require('fs'),
 	JPEG = require('jpeg-js'),
 	BMP  = require('bmp-js');
 
+const {abs, max, min, ceil, floor, round, random} = Math;
+
 const gamma = 2.2;
 const gamma_1 = 1 / gamma;
 
@@ -17,7 +19,7 @@ class FurryImage {
 	constructor(width, height, components) {
 		this.width = width;
 		this.height = height;
-		this.components = components || ['r', 'g', 'b', 'a'];
+		this.components = components ? Array.from(components) : ['r', 'g', 'b', 'a'];
 		this.size = this.width * this.height;
 		this.data = [];
 		for (let c = 0; c < this.components.length; c++) {
@@ -119,8 +121,8 @@ class FurryImage {
 	}
 
 	getValue(c, x, y) {
-		x = Math.max(0, Math.min(x, this.width - 1));
-		y = Math.max(0, Math.min(y, this.height - 1));
+		x = max(0, min(x, this.width - 1));
+		y = max(0, min(y, this.height - 1));
 		return this.data[c][x + y * this.width];
 	}
 	setValue(c, x, y, value) {
@@ -132,7 +134,7 @@ class FurryImage {
 	crop(x, y, width, height) {
 		x = x || 0;
 		y = y || 0;
-		let components = this.components.slice();
+		let components = this.components;
 		let image = new FurryImage(width, height, components);
 		for (let c = 0; c < components.length; c++) {
 			for (let h = 0; h < height; h++) {
@@ -147,9 +149,9 @@ class FurryImage {
 	subsampling(n, m) {
 		n = n || 2;
 		m = m || n;
-		let width = Math.ceil(this.width / n);
-		let height = Math.ceil(this.height / m);
-		let components = this.components.slice();
+		let width = ceil(this.width / n);
+		let height = ceil(this.height / m);
+		let components = this.components;
 		let image = new FurryImage(width, height, components);
 		for (let c = 0; c < components.length; c++) {
 			for (let h = 0; h < height; h++) {
@@ -164,9 +166,9 @@ class FurryImage {
 	averaging(n, m) {
 		n = n || 2;
 		m = m || n;
-		let width = Math.ceil(this.width / n);
-		let height = Math.ceil(this.height / m);
-		let components = this.components.slice();
+		let width = ceil(this.width / n);
+		let height = ceil(this.height / m);
+		let components = this.components;
 		let image = new FurryImage(width, height, components);
 		let ratio = 1 / (n * m);
 		for (let c = 0; c < components.length; c++) {
@@ -190,7 +192,7 @@ class FurryImage {
 		function doubleWidth(image) {
 			let width = image.width * 2;
 			let height = image.height;
-			let components = image.components.slice();
+			let components = image.components;
 			let returned_image = new FurryImage(width, height, components);
 			for (let c = 0; c < components.length; c++) {
 				let h, w, prev_2, prev_1, next_1, next_2;
@@ -209,7 +211,7 @@ class FurryImage {
 		function doubleHeight(image) {
 			let width = image.width;
 			let height = image.height * 2;
-			let components = image.components.slice();
+			let components = image.components;
 			let returned_image = new FurryImage(width, height, components);
 			for (let c = 0; c < components.length; c++) {
 				let h, w, prev_2, prev_1, next_1, next_2;
@@ -232,7 +234,7 @@ class FurryImage {
 	randomDoubling() {
 		let width = this.width * 2;
 		let height = this.height * 2;
-		let components = this.components.slice();
+		let components = this.components;
 		let returned_image = new FurryImage(width, height, components);
 		let max_value = 255;
 		let gamma = 2.2;
@@ -245,10 +247,10 @@ class FurryImage {
 			for (w = 0; w < this.width; w++) {
 				total = this.getValue(c, w, h) * 4;
 				// get random values
-				value_a = Math.random() * max_value;
-				value_b = Math.random() * max_value;
-				value_c = Math.random() * max_value;
-				value_d = Math.random() * max_value;
+				value_a = random() * max_value;
+				value_b = random() * max_value;
+				value_c = random() * max_value;
+				value_d = random() * max_value;
 				// correction for the condition: total == value_a + value_b + value_c + value_d
 				summ = value_a + value_b + value_c + value_d;
 				if (summ > total) {
@@ -284,7 +286,7 @@ class FurryImage {
 	trivialDoubling() {
 		let width = this.width * 2;
 		let height = this.height * 2;
-		let components = this.components.slice();
+		let components = this.components;
 		let returned_image = new FurryImage(width, height, components);
 		for (let c = 0; c < components.length; c++) {
 			let h, w, h2, w2, value;
@@ -303,9 +305,46 @@ class FurryImage {
 		return returned_image;
 	}
 
+	bilinear() {
+		let width = this.width * 2;
+		let height = this.height * 2;
+		let components = this.components;
+		let returned_image = new FurryImage(width, height, components);
+		for (let c = 0; c < components.length; c++) {
+			for (let h = 0; h < this.height; h++) {
+			for (let w = 0; w < this.width; w++) {
+				// 0 1 2
+				// 3 4 5
+				// 6 7 8
+				let area = [
+					this.getValue(c, w - 1, h - 1),
+					this.getValue(c, w + 0, h - 1),
+					this.getValue(c, w + 1, h - 1),
+					this.getValue(c, w - 1, h + 0),
+					this.getValue(c, w + 0, h + 0),
+					this.getValue(c, w + 1, h + 0),
+					this.getValue(c, w - 1, h + 1),
+					this.getValue(c, w + 0, h + 1),
+					this.getValue(c, w + 1, h + 1)
+				];
+				let value_a = 0.5625 * area[4] + 0.1875 * area[1] + 0.1875 * area[3] + 0.0625 * area[0];
+				let value_b = 0.5625 * area[4] + 0.1875 * area[1] + 0.1875 * area[5] + 0.0625 * area[2];
+				let value_c = 0.5625 * area[4] + 0.1875 * area[3] + 0.1875 * area[7] + 0.0625 * area[6];
+				let value_d = 0.5625 * area[4] + 0.1875 * area[5] + 0.1875 * area[7] + 0.0625 * area[8];
+				// set values
+				let w2 = w * 2;
+				let h2 = h * 2;
+				returned_image.setValue(c, w2 + 0, h2 + 0, value_a);
+				returned_image.setValue(c, w2 + 1, h2 + 0, value_b);
+				returned_image.setValue(c, w2 + 0, h2 + 1, value_c);
+				returned_image.setValue(c, w2 + 1, h2 + 1, value_d);
+			}}
+		}
+		return returned_image;
+	}
+
 	doubling() {
 		function coreAxis(prev_3, prev_2, prev_1, center, next_1, next_2, next_3) {
-			const abs = Math.abs;
 			let a = abs(prev_3 - prev_2) + abs(prev_2 - prev_1) + 1,
 				b = abs(prev_2 - prev_1) + abs(prev_1 - center) + 1,
 				c = abs(prev_1 - center) + abs(center - next_1) + 1,
@@ -400,7 +439,6 @@ class FurryImage {
 		}
 
 		function fxaa(doubled_image, original_image) {
-			const abs = Math.abs;
 			let width = original_image.width;
 			let height = original_image.height;
 			let width_2 = doubled_image.width;
@@ -482,10 +520,6 @@ class FurryImage {
 		}
 
 		function fxsr(doubled_image, original_image, and_fix) {
-			const abs = Math.abs;
-			const max = Math.max;
-			const min = Math.min;
-
 			function iter(image, c, x, y, doubled_image) {
 				const g = (w, h) => image.getValue(c, x + w, y + h);
 				//	    0     1
@@ -824,7 +858,14 @@ class FurryImage {
 	}
 
 	supersampling(width, height) {
-		var floor = Math.floor;
+		if (!width && !height) {
+			width = this.width;
+			height = this.height;
+		} else if (width && !height) {
+			height = round(this.height * width / this.width) || 1;
+		} else if (!width && height) {
+			width = round(this.width * height / this.height) || 1;
+		}
 		var ratio_w = width / this.width;
 		var ratio_h = height / this.height;
 		var anti_ratio_w = 1 / ratio_w;
@@ -846,7 +887,7 @@ class FurryImage {
 							let k = 1 - windowStart % 1;
 							total += k * this.getValue(c, windowStartFloor, h);
 						}
-						for (let input_w = Math.ceil(windowStart); input_w < windowEndFloor; input_w++) {
+						for (let input_w = ceil(windowStart); input_w < windowEndFloor; input_w++) {
 							total += this.getValue(c, input_w, h);
 						}
 						if (windowEnd % 1) {
@@ -876,7 +917,7 @@ class FurryImage {
 							let k = 1 - windowStart % 1;
 							total += k * image_resized_width.getValue(c, w, windowStartFloor);
 						}
-						for (let input_h = Math.ceil(windowStart); input_h < windowEndFloor; input_h++) {
+						for (let input_h = ceil(windowStart); input_h < windowEndFloor; input_h++) {
 							total += image_resized_width.getValue(c, w, input_h);
 						}
 						if (windowEnd % 1) {
@@ -892,7 +933,6 @@ class FurryImage {
 		return returned_image;
 	}
 	supersamplingBlur(width, height) {
-		var floor = Math.floor;
 		var ratio_w = width / this.width;
 		var ratio_h = height / this.height;
 		var anti_ratio_w = 1 / ratio_w;
@@ -903,6 +943,275 @@ class FurryImage {
 
 
 
+		return returned_image;
+	}
+
+	doubling_a() {
+		function coreAxis(prev_3, prev_2, prev_1, center, next_1, next_2, next_3) {
+			let a = abs(prev_3 - prev_2) + abs(prev_2 - prev_1) + 1,
+				b = abs(prev_2 - prev_1) + abs(prev_1 - center) + 1,
+				c = abs(prev_1 - center) + abs(center - next_1) + 1,
+				d = abs(center - next_1) + abs(next_1 - next_2) + 1,
+				e = abs(next_1 - next_2) + abs(next_2 - next_3) + 1;
+
+			let kEdge =  c * c / ((a + c) * (c + e));
+			let kSymmetry = (1 - abs(b - d) / (b + d));
+			let kSeparated = kEdge * kSymmetry;
+
+			let returned_x = center + kSeparated * (prev_1 - next_1) * 0.5;
+			let returned_y = center + kSeparated * (next_1 - prev_1) * 0.5;
+			return clampTwo(returned_x, returned_y, center);
+		}
+		
+		function clampTwo(returned_x, returned_y, center) {	
+			if (returned_x < 0) {
+				returned_x = 0;
+				returned_y = 2 * center;
+			}
+			if (returned_y < 0) {
+				returned_y = 0;
+				returned_x = 2 * center;
+			}
+			let max = 255;
+			if (returned_x > max) {
+				returned_x = max;
+				returned_y = 2 * center - max;
+			}
+			if (returned_y > max) {
+				returned_y = max;
+				returned_x = 2 * center - max;
+			}
+			return [returned_x, returned_y];
+		}
+
+		function doubleWidth(image) {
+			let width = image.width * 2;
+			let height = image.height;
+			let returned_image = new FurryImage(width, height);
+			for (let c = 0; c < 4; c++) {
+				let h, w, prev_3, prev_2, prev_1, center, next_1, next_2, next_3, values;
+				for (h = 0; h < image.height; h++) {
+				for (w = 0; w < image.width; w++) {
+					prev_3 = image.getValue(c, w - 3, h);
+					prev_2 = image.getValue(c, w - 2, h);
+					prev_1 = image.getValue(c, w - 1, h);
+					center = image.getValue(c, w, h);
+					next_1 = image.getValue(c, w + 1, h);
+					next_2 = image.getValue(c, w + 2, h);
+					next_3 = image.getValue(c, w + 3, h);
+					values = coreAxis(prev_3, prev_2, prev_1, center, next_1, next_2, next_3);
+					returned_image.setValue(c, w * 2,     h, values[0]);
+					returned_image.setValue(c, w * 2 + 1, h, values[1]);
+				}}
+			}
+			return returned_image;
+		}
+
+		function doubleHeight(image) {
+			let width = image.width;
+			let height = image.height * 2;
+			let returned_image = new FurryImage(width, height);
+			for (let c = 0; c < 4; c++) {
+				let h, w, prev_3, prev_2, prev_1, center, next_1, next_2, next_3, values;
+				for (h = 0; h < image.height; h++) {
+				for (w = 0; w < image.width; w++) {
+					prev_3 = image.getValue(c, w, h - 3);
+					prev_2 = image.getValue(c, w, h - 2);
+					prev_1 = image.getValue(c, w, h - 1);
+					center = image.getValue(c, w, h);
+					next_1 = image.getValue(c, w, h + 1);
+					next_2 = image.getValue(c, w, h + 2);
+					next_3 = image.getValue(c, w, h + 3);
+					values = coreAxis(prev_3, prev_2, prev_1, center, next_1, next_2, next_3);
+					returned_image.setValue(c, w, h * 2    , values[0]);
+					returned_image.setValue(c, w, h * 2 + 1, values[1]);
+				}}
+			}
+			return returned_image;
+		}
+
+		function merge(image1, image2) {
+			let width = image1.width;
+			let height = image1.height;
+			let size = image1.size;
+			let components = image1.components;
+			let returned_image = new FurryImage(width, height, components);
+			for (let c = 0; c < components.length; c++) {
+				for (let i = 0; i < size; i++) {
+					returned_image.data[c][i] = (image1.data[c][i] + image2.data[c][i]) * 0.5;
+				}
+			}
+			return returned_image;
+		}
+
+		function makeMagnitude(original) {
+			let width = original.width;
+			let height = original.height;
+			let components = original.components;
+			let epsilon = 0.001;
+			let direction_0 = new FurryImage(width, height, components);
+			let direction_1 = new FurryImage(width, height, components);
+			let direction_2 = new FurryImage(width, height, components);
+			let direction_3 = new FurryImage(width, height, components);
+			let direction_4 = new FurryImage(width, height, components);
+			let direction_5 = new FurryImage(width, height, components);
+			let direction_6 = new FurryImage(width, height, components);
+			let direction_7 = new FurryImage(width, height, components);
+			let direction_8 = new FurryImage(width, height, components);
+			for (let c = 0; c < components.length; c++) {
+				for (let h = 0; h < height; h++) {
+				for (let w = 0; w < width;  w++) {
+					// 0 1 2
+					// 3 4 5
+					// 6 7 8
+					let area = [
+						original.getValue(c, w - 1, h - 1),
+						original.getValue(c, w + 0, h - 1),
+						original.getValue(c, w + 1, h - 1),
+						original.getValue(c, w - 1, h + 0),
+						original.getValue(c, w + 0, h + 0),
+						original.getValue(c, w + 1, h + 0),
+						original.getValue(c, w - 1, h + 1),
+						original.getValue(c, w + 0, h + 1),
+						original.getValue(c, w + 1, h + 1)
+					];
+					let ad_area = area.map(a => 1 + abs(area[4] - a));
+					let ad_max = ad_area.reduce((a, b) => max(a, b), 1);
+					ad_max = 255; //
+					ad_area[4] = 255;
+					let ad_min = ad_area.reduce((a, b) => min(a, b), 255);
+					let w_area = ad_area.map(a => 1 - a / ad_max);
+					w_area[4] = 1 - ad_min / ad_max + epsilon;
+					let w_total = w_area.reduce((a, b) => a + b, 0);
+					let value = w_area.map(k => k / w_total);
+					direction_0.setValue(c, w, h, value[0]);
+					direction_1.setValue(c, w, h, value[1]);
+					direction_2.setValue(c, w, h, value[2]);
+					direction_3.setValue(c, w, h, value[3]);
+					direction_4.setValue(c, w, h, value[4]);
+					direction_5.setValue(c, w, h, value[5]);
+					direction_6.setValue(c, w, h, value[6]);
+					direction_7.setValue(c, w, h, value[7]);
+					direction_8.setValue(c, w, h, value[8]);
+				}}
+			}
+			return [
+				direction_0,
+				direction_1,
+				direction_2,
+				direction_3,
+				direction_4,
+				direction_5,
+				direction_6,
+				direction_7,
+				direction_8
+			].map(img => img.bilinear());
+		}
+
+		function fix(image, original) {
+			let width = original.width;
+			let height = original.height;
+			let components = original.components;
+			let returned_image = new FurryImage(width * 2, height * 2, components);
+			for (let c = 0; c < components.length; c++) {
+				for (let h = 0; h < height; h++) {
+				for (let w = 0; w < width;  w++) {
+					let total = 4 * original.getValue(c, w, h);
+					let w2 = w * 2;
+					let h2 = h * 2;
+					let value_a = image.getValue(c, w2 + 0, h2 + 0);
+					let value_b = image.getValue(c, w2 + 1, h2 + 0);
+					let value_c = image.getValue(c, w2 + 0, h2 + 1);
+					let value_d = image.getValue(c, w2 + 1, h2 + 1);
+					let summ = value_a + value_b + value_c + value_d
+					if (summ > total) {
+						let k_fix = total / summ;
+						value_a *= k_fix;
+						value_b *= k_fix;
+						value_c *= k_fix;
+						value_d *= k_fix;
+					} else if (summ < total) {
+						let max_value = 255;
+						let a_ = max_value - value_a;
+						let b_ = max_value - value_b;
+						let c_ = max_value - value_c;
+						let d_ = max_value - value_d;
+						let t_ = max_value * 4 - total;
+						let k_fix = t_ / (a_ + b_ + c_ + d_);
+						value_a = max_value - a_ * k_fix;
+						value_b = max_value - b_ * k_fix;
+						value_c = max_value - c_ * k_fix;
+						value_d = max_value - d_ * k_fix;
+					}
+					returned_image.setValue(c, w2 + 0, h2 + 0, value_a);
+					returned_image.setValue(c, w2 + 1, h2 + 0, value_b);
+					returned_image.setValue(c, w2 + 0, h2 + 1, value_c);
+					returned_image.setValue(c, w2 + 1, h2 + 1, value_d);
+				}}
+			}
+			return returned_image;
+		}
+
+		function blur(image) {
+			let width = image.width;
+			let height = image.height;
+			let components = image.components;
+			let returned_image = new FurryImage(width, height, components);
+			for (let c = 0; c < components.length; c++) {
+				for (let h = 0; h < height; h++) {
+				for (let w = 0; w < width;  w++) {
+					let summ = 0 +
+						image.getValue(c, w - 0, h - 1) +
+						image.getValue(c, w - 1, h - 0) +
+						image.getValue(c, w - 0, h - 0) +
+						image.getValue(c, w + 1, h - 0) +
+						image.getValue(c, w - 0, h + 1);
+					returned_image.setValue(c, w, h, summ / 5);
+				}}
+			}
+			return returned_image;
+		}
+
+		function directionalBlur(image, magnitude) {
+			let width = image.width;
+			let height = image.height;
+			let components = image.components;
+			let returned_image = new FurryImage(width, height, components);
+			for (let c = 0; c < components.length; c++) {
+				for (let h = 0; h < height; h++) {
+				for (let w = 0; w < width;  w++) {
+					var area = [
+						image.getValue(c, w - 1, h - 1),
+						image.getValue(c, w + 0, h - 1),
+						image.getValue(c, w + 1, h - 1),
+						image.getValue(c, w - 1, h + 0),
+						image.getValue(c, w + 0, h + 0),
+						image.getValue(c, w + 1, h + 0),
+						image.getValue(c, w - 1, h + 1),
+						image.getValue(c, w + 0, h + 1),
+						image.getValue(c, w + 1, h + 1)
+					];
+					var value = 0 +
+						area[0] * magnitude[0].getValue(c, w, h) +
+						area[1] * magnitude[1].getValue(c, w, h) +
+						area[2] * magnitude[2].getValue(c, w, h) +
+						area[3] * magnitude[3].getValue(c, w, h) +
+						area[4] * magnitude[4].getValue(c, w, h) +
+						area[5] * magnitude[5].getValue(c, w, h) +
+						area[6] * magnitude[6].getValue(c, w, h) +
+						area[7] * magnitude[7].getValue(c, w, h) +
+						area[8] * magnitude[8].getValue(c, w, h);
+					returned_image.setValue(c, w, h, value);
+				}}
+			}
+			return returned_image;
+		}
+
+		let returned_image = merge(doubleWidth(doubleHeight(this)), doubleHeight(doubleWidth(this)));
+		let magnitude = makeMagnitude(this);
+		for (let iter = 0; iter < 4; iter++) {
+			returned_image = fix(directionalBlur(returned_image, magnitude), this);
+		}
 		return returned_image;
 	}
 }
