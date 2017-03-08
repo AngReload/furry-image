@@ -946,7 +946,8 @@ class FurryImage {
 		return returned_image;
 	}
 
-	doubling_a() {
+	doubling_b(iters) {
+		iters = iters >= 0 ? round(iters) : 8;
 		function coreAxis(prev_3, prev_2, prev_1, center, next_1, next_2, next_3) {
 			let a = abs(prev_3 - prev_2) + abs(prev_2 - prev_1) + 1,
 				b = abs(prev_2 - prev_1) + abs(prev_1 - center) + 1,
@@ -1044,70 +1045,6 @@ class FurryImage {
 			return returned_image;
 		}
 
-		function makeMagnitude(original) {
-			let width = original.width;
-			let height = original.height;
-			let components = original.components;
-			let epsilon = 0.001;
-			let direction_0 = new FurryImage(width, height, components);
-			let direction_1 = new FurryImage(width, height, components);
-			let direction_2 = new FurryImage(width, height, components);
-			let direction_3 = new FurryImage(width, height, components);
-			let direction_4 = new FurryImage(width, height, components);
-			let direction_5 = new FurryImage(width, height, components);
-			let direction_6 = new FurryImage(width, height, components);
-			let direction_7 = new FurryImage(width, height, components);
-			let direction_8 = new FurryImage(width, height, components);
-			for (let c = 0; c < components.length; c++) {
-				for (let h = 0; h < height; h++) {
-				for (let w = 0; w < width;  w++) {
-					// 0 1 2
-					// 3 4 5
-					// 6 7 8
-					let area = [
-						original.getValue(c, w - 1, h - 1),
-						original.getValue(c, w + 0, h - 1),
-						original.getValue(c, w + 1, h - 1),
-						original.getValue(c, w - 1, h + 0),
-						original.getValue(c, w + 0, h + 0),
-						original.getValue(c, w + 1, h + 0),
-						original.getValue(c, w - 1, h + 1),
-						original.getValue(c, w + 0, h + 1),
-						original.getValue(c, w + 1, h + 1)
-					];
-					let ad_area = area.map(a => 1 + abs(area[4] - a));
-					let ad_max = ad_area.reduce((a, b) => max(a, b), 1);
-					ad_max = 255; //
-					ad_area[4] = 255;
-					let ad_min = ad_area.reduce((a, b) => min(a, b), 255);
-					let w_area = ad_area.map(a => 1 - a / ad_max);
-					w_area[4] = 1 - ad_min / ad_max + epsilon;
-					let w_total = w_area.reduce((a, b) => a + b, 0);
-					let value = w_area.map(k => k / w_total);
-					direction_0.setValue(c, w, h, value[0]);
-					direction_1.setValue(c, w, h, value[1]);
-					direction_2.setValue(c, w, h, value[2]);
-					direction_3.setValue(c, w, h, value[3]);
-					direction_4.setValue(c, w, h, value[4]);
-					direction_5.setValue(c, w, h, value[5]);
-					direction_6.setValue(c, w, h, value[6]);
-					direction_7.setValue(c, w, h, value[7]);
-					direction_8.setValue(c, w, h, value[8]);
-				}}
-			}
-			return [
-				direction_0,
-				direction_1,
-				direction_2,
-				direction_3,
-				direction_4,
-				direction_5,
-				direction_6,
-				direction_7,
-				direction_8
-			].map(img => img.bilinear());
-		}
-
 		function fix(image, original) {
 			let width = original.width;
 			let height = original.height;
@@ -1172,7 +1109,7 @@ class FurryImage {
 			return returned_image;
 		}
 
-		function directionalBlur(image, magnitude) {
+		function directionalBlur(image) {
 			let width = image.width;
 			let height = image.height;
 			let components = image.components;
@@ -1180,27 +1117,25 @@ class FurryImage {
 			for (let c = 0; c < components.length; c++) {
 				for (let h = 0; h < height; h++) {
 				for (let w = 0; w < width;  w++) {
+					var center = image.getValue(c, w + 0, h + 0);
+					// 0 1 2
+					// 3   4
+					// 5 6 7
 					var area = [
 						image.getValue(c, w - 1, h - 1),
 						image.getValue(c, w + 0, h - 1),
 						image.getValue(c, w + 1, h - 1),
 						image.getValue(c, w - 1, h + 0),
-						image.getValue(c, w + 0, h + 0),
 						image.getValue(c, w + 1, h + 0),
 						image.getValue(c, w - 1, h + 1),
 						image.getValue(c, w + 0, h + 1),
 						image.getValue(c, w + 1, h + 1)
 					];
-					var value = 0 +
-						area[0] * magnitude[0].getValue(c, w, h) +
-						area[1] * magnitude[1].getValue(c, w, h) +
-						area[2] * magnitude[2].getValue(c, w, h) +
-						area[3] * magnitude[3].getValue(c, w, h) +
-						area[4] * magnitude[4].getValue(c, w, h) +
-						area[5] * magnitude[5].getValue(c, w, h) +
-						area[6] * magnitude[6].getValue(c, w, h) +
-						area[7] * magnitude[7].getValue(c, w, h) +
-						area[8] * magnitude[8].getValue(c, w, h);
+					var ad_area = area.map(k => abs(k - center) + 1);
+					var max_ad = ad_area.reduce((a, b) => max(a, b), 1);
+					var k_area = ad_area.map(k => 1 - k / max_ad);
+					var total_value = center + area.reduce((a, b, i) => a + b * k_area[i], 0);
+					var value = total_value / k_area.reduce((a, b) => a + b, 1);
 					returned_image.setValue(c, w, h, value);
 				}}
 			}
@@ -1208,10 +1143,7 @@ class FurryImage {
 		}
 
 		let returned_image = merge(doubleWidth(doubleHeight(this)), doubleHeight(doubleWidth(this)));
-		let magnitude = makeMagnitude(this);
-		for (let iter = 0; iter < 4; iter++) {
-			returned_image = fix(directionalBlur(returned_image, magnitude), this);
-		}
+		while (iters--) returned_image = fix(directionalBlur(returned_image), this);
 		return returned_image;
 	}
 }
