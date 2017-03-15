@@ -6,6 +6,11 @@ function doublingFurry() {
 	const FurryImage = this.constructor;
 
 	function coreAxis(prev_3, prev_2, prev_1, center, next_1, next_2, next_3) {
+		// if Edge in center X == left, Y == right, else X == Y == center
+		// Edge if prev_3 == prev_2 == prev_1 AND next_1 == next_2 == next_3
+		// ... AND prev_1 !== center OR next_1 !== center
+		// Edge simmetry if (prev_1 - center) == (next_1 - center)
+		// =>
 		let a = abs(prev_3 - prev_2) + abs(prev_2 - prev_1) + 1,
 			b = abs(prev_2 - prev_1) + abs(prev_1 - center) + 1,
 			c = abs(prev_1 - center) + abs(center - next_1) + 1,
@@ -14,30 +19,39 @@ function doublingFurry() {
 		let kEdge = c * c / ((a + c) * (c + e));
 		let kSymmetry = (1 - abs(b - d) / (b + d));
 		let kSeparated = kEdge * kSymmetry;
-		let returned_x = center + kSeparated * (prev_1 - next_1) * 0.5;
-		let returned_y = center + kSeparated * (next_1 - prev_1) * 0.5;
+		// summ = 2 * center
+		//  left similarity: X == prev_1, Y == summ - X
+		// right similarity: Y == next_1, X == summ - Y
+		// centred edge: X == (lsX + rsX) / 2, Y  == (lsY + rsY) / 2
+		// edge X == (lsX + rsX) / 2 == (prev_1 + 2 * center - next_1) / 2
+		// edge Y == (lsX + rsX) / 2 == (next_1 + 2 * center - prev_1) / 2
+		// ... == center + (prev_1 - next_1) / 2
+		// ... == center + (next_1 - prev_1) / 2
+		// left- or right-edge or no-edge: X === center, Y === center
+		// X == (1 - kSeparated) * center + kSeparated * (center + (prev_1 - next_1) / 2);
+		// Y == (1 - kSeparated) * center + kSeparated * (center + (next_1 - prev_1) / 2);
+		// => 
+		let returned_x = center + kSeparated * (prev_1 - next_1) / 2;
+		let returned_y = center + kSeparated * (next_1 - prev_1) / 2;
 		return clampTwo(returned_x, returned_y, center);
 	}
 	
-	function clampTwo(returned_x, returned_y, center) {	
-		if (returned_x < 0) {
-			returned_x = 0;
-			returned_y = 2 * center;
+	function clampTwo(x, y, average) {
+		let summ = 2 * average;
+		if (x < 0) {
+			x = 0;
+			y = summ - x;
+		} else if (x > 255) {
+			x = 255;
+			y = summ - x;
+		} else if (y < 0) {
+			y = 0;
+			x = summ - y;
+		} else if (y > 255) {
+			y = 255;
+			x = summ - y;
 		}
-		if (returned_y < 0) {
-			returned_y = 0;
-			returned_x = 2 * center;
-		}
-		let max = 255;
-		if (returned_x > max) {
-			returned_x = max;
-			returned_y = 2 * center - max;
-		}
-		if (returned_y > max) {
-			returned_y = max;
-			returned_x = 2 * center - max;
-		}
-		return [returned_x, returned_y];
+		return [x, y];
 	}
 
 	function doubleWidth(image) {

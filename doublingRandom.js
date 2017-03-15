@@ -4,8 +4,8 @@ const {min, max, random} = Math;
 
 function makeRndByAverage(average) {
 	let summ = average * 2;
-	let aMIN = max(0, summ - 255);
-	let aMAX = min(255, summ);
+	let aMIN = max(summ - 255, 0);	// minimal A == SUMM - MAX_B, but A >= 0
+	let aMAX = min(255, summ);		// maximal A == 255, but A <= SUMM
 	let a = (aMAX - aMIN) * random() + aMIN;
 	let b = summ - a;
 	return [a, b];
@@ -30,4 +30,5 @@ function doublingRandom() {
 	});
 	return image_4;
 }
+
 module.exports = doublingRandom;
