@@ -39,8 +39,9 @@ class FurryImage {
 		for (let c = 0; c < components.length; c++) {
 			for (let h = 0; h < height; h++) {
 				for (let w = 0; w < width; w++) {
-					const v = this.get(c, w, h);
-					image.set(c, w, h, fn.call(self, v, c, w, h, this));
+					const value = this.get(c, w, h);
+					const modifedValue = fn.call(self, value, c, w, h, this);
+					image.set(c, w, h, modifedValue);
 				}
 			}
 		}
@@ -55,8 +56,8 @@ class FurryImage {
 		for (let c = 0; c < components.length; c++) {
 			for (let h = 0; h < height; h++) {
 				for (let w = 0; w < width; w++) {
-					const v = this.get(c, w, h);
-					fn.call(self, v, c, w, h, this);
+					const value = this.get(c, w, h);
+					fn.call(self, value, c, w, h, this);
 				}
 			}
 		}
