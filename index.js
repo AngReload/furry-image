@@ -62,6 +62,10 @@ class FurryImage {
 			}
 		}
 	}
+
+	copy() {
+		return new this.constructor(this.width, this.height, this.components).map((v, c, x, y) => this.get(c, x, y));
+	}
 }
 
 // extend static
@@ -86,6 +90,7 @@ const prototypeProperties = [
 	'doublingRandom',
 	'doublingBilinear',
 	'doublingFurry',
+	'floydSteinberg',
 ];
 
 for (let name of prototypeProperties) {
