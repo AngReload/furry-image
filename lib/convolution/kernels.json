@@ -1,0 +1,83 @@
+{
+    "identity": {
+        "xOrigin": 0,
+        "yOrigin": 0,
+        "matrix": [[1]]
+    },
+    "sharpen": {
+        "xOrigin": 1,
+        "yOrigin": 1,
+        "matrix": [
+            [ 0, -1,  0],
+            [-1,  5, -1],
+            [ 0, -1,  0]
+        ]
+    },
+    "blurBox3x3": {
+        "xOrigin": 1,
+        "yOrigin": 1,
+        "matrix": [
+            [1, 1, 1],
+            [1, 1, 1],
+            [1, 1, 1]
+        ],
+        "divisor": 9
+    },
+    "blurCircle3x3": {
+        "xOrigin": 1,
+        "yOrigin": 1,
+        "matrix": [
+            [1, 2, 1],
+            [2, 2, 2],
+            [1, 2, 1]
+        ],
+        "divisor": 14
+    },
+    "blurCircle5x5": {
+        "xOrigin": 2,
+        "yOrigin": 2,
+        "matrix": [
+            [1, 6, 8, 6, 1],
+            [6, 8, 8, 8, 6],
+            [8, 8, 8, 8, 8],
+            [6, 8, 8, 8, 6],
+            [1, 6, 8, 6, 1]
+        ],
+        "divisor": 156
+    },
+    "blurGaussian3x3": {
+        "xOrigin": 1,
+        "yOrigin": 1,
+        "matrix": [
+            [1, 2, 1],
+            [2, 4, 2],
+            [1, 2, 1]
+        ],
+        "divisor": 16
+    },
+    "blurGaussian5x5": {
+        "xOrigin": 2,
+        "yOrigin": 2,
+        "matrix": [
+            [1,  4,  6,  4, 1],
+            [4, 16, 24, 16, 4],
+            [6, 24, 36, 24, 6],
+            [4, 16, 24, 16, 4],
+            [1,  4,  6,  4, 1]
+        ],
+        "divisor": 256
+    },
+    "unsharpMasking5x5": {
+        "xOrigin": 2,
+        "yOrigin": 2,
+        "matrix": [
+            [1,  4,    6,  4, 1],
+            [4, 16,   24, 16, 4],
+            [6, 24, -476, 24, 6],
+            [4, 16,   24, 16, 4],
+            [1,  4,    6,  4, 1]
+        ],
+        "multiplier": -1,
+        "divisor": 256
+    }
+}

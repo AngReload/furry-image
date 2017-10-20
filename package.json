@@ -1,10 +1,10 @@
 {
   "name": "furry-image",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Class Image on JavaScript",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "cd tests && node index.js"
   },
   "author": "AngReload",
   "license": "MIT",
@@ -23,7 +23,8 @@
   "dependencies": {
     "bmp-js": "0.0.3",
     "jpeg-js": "^0.2.0",
-    "jpeg-js-chroma-hq": "^1.0.1",
-    "pngjs": "^3.0.1"
+    "jpeg-js-chroma-hq": "^1.0.8",
+    "pngjs": "^3.0.1",
+    "require-directory": "^2.1.1"
   }
 }
